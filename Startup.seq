@@ -1,0 +1,62 @@
+! --------------------------------------------------------------
+! CODE V 启动初始化宏 (Startup.seq)
+! 在偏好设置中配置为启动时自动运行的第二个宏
+! --------------------------------------------------------------
+
+! 1. 【静默设置】关闭宏命令回显，保持启动界面整洁
+VER ALL NO
+
+! 2. 【全局变量】定义常用数学常数
+GBL NUM ^PI ^RAD
+^PI == 4*ATANF(1)         ! 计算 Pi 值
+^RAD == 180/^PI           ! 弧度转角度换算系数
+
+! 3. 【系统安全与性能】
+FVR Y                     ! 开启文件版本控制 (File Versioning) 
+! SVL Y                     ! 开启自动保存镜头 (保存至 cvrecovr.len) 
+MPP 0                     ! 启用多核并行处理 (0表示使用所有可用核心) 
+
+! 4. 【文件清理】
+! 注意：谨慎选择移除删除 *.rec 的命令，防止误删崩溃恢复文件！
+! 仅清理临时文件
+lib
+    ! del *.*.rec; del *.rec  ! 删除恢复文件
+    del *.*.tmp; del *.tmp  ! 删除临时文件
+go                          ! 退出 LIB 选项
+
+! 5. 【路径设置】
+! 设置默认库路径 (确保 cv_lens: 和 cv_macro: 别名有效)
+pth len cv_lens:
+pth seq cv_macro:
+! 追加用户自定义宏路径
+pth seq app "C:\CVUSER\macros\FCT"
+
+! 6. 【加载用户自定义函数】
+! 在这里使用 IN 命令加载函数定义。
+! 由于上面已经设置了 pth seq，这里直接写文件名即可，无需写全路径。
+IN CENZ                   ! 加载并编译 @CENZ 函数
+IN TRA                    ! 加载并编译 @TRA 函数
+IN MAX_TELE               ! 加载并编译 @MAX_TELE 函数
+IN JMRCC                  ! 加载并编译 JMRCC 函数
+IN JMRCC_W                ! 加载并编译 JMRCC_W 函数
+IN TELE                   ! 加载并编译 @TELE 函数
+
+! 7. 【初始参数设置】
+RDM Y                     ! 默认使用“半径”模式 
+DDM M                     ! 新建镜头默认单位：毫米 
+DIM M                     ! 确保当前环境也设为毫米 
+DIN "TJU"                 ! 设置图形输出的默认签名 
+
+! 8. 【完成提示】
+OUT Y
+wri "================================================"
+wri "  DONE: Startup.seq initialization complete."
+wri "  MPP: successfully enabled"
+wri "  SVL: successfully enabled"
+wri "  Function loaded: @CENZ ready"
+wri "  Function loaded: @TRA ready"
+wri "  Function loaded: @MAX_TELE ready"
+wri "  Function loaded: JMRCC ready"
+wri "  Function loaded: JMRCC_W ready"
+wri "  Function loaded: @TELE ready"
+wri "================================================"

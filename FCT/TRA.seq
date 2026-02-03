@@ -1,0 +1,36 @@
+! --------------------------------------------------------------
+! 函数名: @TRA
+! 描述: 计算并返回指定视场和波长的总透过率
+! 参数:
+!   ^xf      : X 视场坐标
+!   ^yf      : Y 视场坐标
+!   ^wave_idx: 波长索引 (1-波长数; 或用 (num w)+1 表示全波长平均)
+! --------------------------------------------------------------
+FCT @TRA(NUM ^xf, NUM ^yf, NUM ^wave_idx)
+    ! 定义局部变量
+    LCL NUM ^pol_in(5)          ! 偏振输入数组
+    LCL NUM ^tra_out(10, 22)    ! 输出数组，支持最大21个波长+1个平均值
+    LCL NUM ^status             ! 状态返回值
+    LCL NUM ^result             ! 最终提取的透过率
+    LCL NUM ^z                  ! 局部变量：变焦位置
+
+    ! --- 设置默认变焦位置 ---
+    ^z == 1  
+
+    ! 初始化偏振：设为0表示使用系统定义的视场偏振状态[2]
+    ^pol_in(1) == 0 
+
+    ! 调用 CODE V 内置透过率计算函数
+    ! 语法: TRA_1FLD(Zoom, XField, YField, NRD, Geo/Stokes, Scale, Pol_In, Output)
+    ! 引用: [1]
+    ^status == TRA_1FLD(^z, ^xf, ^yf, 20, 0, 1.5, ^pol_in, ^tra_out)
+
+    ! 如果计算成功（^status=0），提取数据[1]
+    ! ^tra_out(3, k) 对应“平均总透过率 (Average overall transmittance)” [3]
+    IF ^status = 0
+        ^result == ^tra_out(3, ^wave_idx)
+    ELSE
+        ^result == 0  ! 若计算失败（如光线截断），返回0
+    END IF
+
+END FCT ^result

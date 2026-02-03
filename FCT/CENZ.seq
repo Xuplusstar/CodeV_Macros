@@ -1,0 +1,49 @@
+! -----------------------------------------------------------------------------
+! FCT: @CENZ
+! 功能: 计算定心系数 (Centering Coefficient / Z-Factor)
+! 
+! Input : ^i (起始面号 / Start Surface Number)
+! Return: ^Z (定心系数结果)
+!
+! 原理说明: 
+! 该函数计算两个相邻表面的定心敏感度。
+! 采用有效半口径 y = SD - d (其中 d为边缘余量，此处默认为0.2mm)。
+! 公式: Z = |(y1/R1 - y2/R2) / 2|
+! -----------------------------------------------------------------------------
+
+FCT @CENZ(NUM ^i)
+
+    ! 声明局部变量 (Local Variables)
+    LCL NUM ^sur ^next ^d1 ^d2
+    LCL NUM ^y1 ^y2 ^R1 ^R2 ^Z
+
+    ! 初始化面号索引 (Initialize Surface Indices)
+    ^sur  == ^i
+    ^next == ^sur + 1
+
+    ! 定义口径缩减量 (Edge margin/clearance)
+    ! 这里硬编码为 0.2，可视需要改为参数传入
+    ^d1 == 0.2
+    ^d2 == 0.2
+
+    ! 计算有效高度 y (Effective Height)
+    ! (SD S^sur) 为从数据库获取该面的半口径
+    ^y1 == (SD  S^sur ) - ^d1
+    ^y2 == (SD  S^next) - ^d2
+
+    ! 获取曲率半径 R (Radius of Curvature)
+    ! (RDY S^sur) 为从数据库获取该面的半径
+    ^R1 == (RDY S^sur )
+    ^R2 == (RDY S^next)
+
+    ! 错误检查：确保数据有效以防计算崩溃 (Error Checking)
+    ! 检查项：有效高度是否非正、半径是否为0 (平面)
+    IF ((^y1 <= 0) OR (^y2 <= 0) OR (^R1 = 0) OR (^R2 = 0))
+        ^Z == 0
+    ELS
+        ! 执行定心系数计算公式
+        ! 使用 ABSF() 获取绝对值
+        ^Z == ABSF((^y1/^R1 - ^y2/^R2)/2)
+    END IF
+
+End FCT ^Z

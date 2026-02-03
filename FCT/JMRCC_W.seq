@@ -1,0 +1,86 @@
+! -----------------------------------------------------------------------------
+! 函数名称: @JMRCC_W
+! 功能: 计算 "线 A" 到 "点 B" 的垂直距离，每条光线可独立指定波长。
+!
+! 输入参数列表 (11个):
+! 1-4: 线 A (基准) -> ^ra (光线号), ^fa (视场), ^sa (面号), ^wa (波长)
+! 5-8: 点 B (目标) -> ^rb (光线号), ^fb (视场), ^sb (面号), ^wb (波长)
+! 9-11:点 C (交点) -> ^rc (光线号), ^fc (视场), ^wc (波长)
+!
+! 注意: 波长输入 0 表示使用参考波长 (Ref WL)。
+! -----------------------------------------------------------------------------
+
+FCT @JMRCC_W(num ^ra, num ^fa, num ^sa, num ^wa, &
+                   num ^rb, num ^fb, num ^sb, num ^wb, &
+                   num ^rc, num ^fc, num ^wc)
+
+    ! 1. 声明用于存储实际波长索引的局部变量
+    LCL NUM ^use_wa ^use_wb ^use_wc
+    LCL NUM ^ref_wl_index
+    
+    ! 获取系统当前的参考波长索引 (通常是 1, 2, 或 3)
+    ^ref_wl_index == (REF)
+
+    ! 2. 处理波长逻辑：如果输入 0，则赋值为参考波长
+    if ^wa = 0
+        ^use_wa == ^ref_wl_index
+    else
+        ^use_wa == ^wa
+    end if
+
+    if ^wb = 0
+        ^use_wb == ^ref_wl_index
+    else
+        ^use_wb == ^wb
+    end if
+
+    if ^wc = 0
+        ^use_wc == ^ref_wl_index
+    else
+        ^use_wc == ^wc
+    end if
+
+    ! 3. 获取 [线 A] 的数据 (使用 ^use_wa)
+    ! 获取起点坐标 (Y, Z) 和 方向余弦 (N, M)
+    ! 注意：添加了 w^use_wa 限定符
+    ^za == (z r^ra f^fa w^use_wa s^sa)
+    ^ya == (y r^ra f^fa w^use_wa s^sa)
+    ^cost == (n r^ra f^fa w^use_wa s^sa)
+    ^sint == (m r^ra f^fa w^use_wa s^sa)
+
+    ! 4. 获取 [光线 B] 的数据 (使用 ^use_wb)
+    ! 获取光线 B 在表面 B 上的坐标，参考系转换到表面 A (g^sa)
+    ^zb == (z r^rb f^fb w^use_wb s^sb g^sa)
+    ^yb == (y r^rb f^fb w^use_wb s^sb g^sa)
+
+    ! 5. 判断是否使用双光线交点模式 (检查光线 C 是否存在)
+    if ^rc and ^fc
+        ! --- 交点模式 ---
+        
+        ! 获取光线 B 的方向余弦 (使用 ^use_wb)
+        ^mb == (m r^rb f^fb w^use_wb s^sb g^sa)
+        ^nb == (n r^rb f^fb w^use_wb s^sb g^sa)
+        
+        ! 获取光线 C 的数据 (使用 ^use_wc)
+        ! 坐标与方向余弦
+        ^zc == (z r^rc f^fc w^use_wc s^sb g^sa)
+        ^yc == (y r^rc f^fc w^use_wc s^sb g^sa)
+        ^mc == (m r^rc f^fc w^use_wc s^sb g^sa)
+        ^nc == (n r^rc f^fc w^use_wc s^sb g^sa)
+        
+        ! 计算光线 B 和光线 C 的空间交点 (Ybc, Zbc)
+        ! 公式原理：解二元一次方程组求交点
+        ^zbc == (^nb*^nc*(^yc-^yb)+^zb*^mb*^nc-^zc*^mc*^nb)/(^mb*^nc-^mc*^nb)
+        ^ybc == ^yb+(^zbc-^zb)*^mb/^nb
+        
+        ! 计算 [交点] 到 [线 A] 的垂直距离
+        ^dist == ^cost*(^ybc-^ya)-^sint*(^zbc-^za)
+    else 
+        ! --- 单光线截点模式 (默认) ---
+        
+        ! 直接计算 [光线 B 在表面 B 的截点] 到 [线 A] 的垂直距离
+        ^dist == ^cost*(^yb-^ya)-^sint*(^zb-^za)
+    end if
+
+! 返回结果
+end fct ^dist

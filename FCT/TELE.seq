@@ -1,0 +1,64 @@
+! -----------------------------------------------------------------------------
+! 函数名称: @TELE
+! 功能描述: 自动遍历当前系统的所有视场，计算并返回指定表面出射主光线的最大角度（与Z轴夹角）。
+!           * 默认使用变焦位置 1 (Z1)
+!           * 默认使用参考波长
+!           * 自动读取当前系统的总视场数 (NUM F)
+! 输入参数: ^surf_id (数值类型) - 指定要计算的表面编号 (例如: 0为物面, (NUM S)为像面)
+! 返回值:   最大角度（单位：度）
+! -----------------------------------------------------------------------------
+
+! 1. 修改函数定义，增加输入参数 ^surf_id [1], [2]
+FCT @TELE(NUM ^surf_id)
+
+    ! --- 2. 定义局部变量 ---
+    LCL NUM ^i              ! 循环计数器
+    LCL NUM ^nFields        ! 系统总视场数
+    LCL NUM ^max_angle      ! 存储当前找到的最大角度
+    LCL NUM ^current_angle  ! 当前循环视场的角度
+    LCL NUM ^l_val          ! 主光线 X 方向光学方向余弦 (Optical Direction Cosine L)
+    LCL NUM ^m_val          ! 主光线 Y 方向光学方向余弦 (Optical Direction Cosine M)
+    LCL NUM ^n_index        ! 指定表面后的折射率
+    LCL NUM ^sin_sq         ! sin(theta) 的平方
+    LCL NUM ^sin_val        ! sin(theta)
+
+    ! --- 3. 初始化变量 ---
+    ^nFields == (NUM F)     ! 获取当前系统的视场总数
+    ^max_angle == 0         ! 初始化最大值为 0
+
+    ! --- 4. 循环遍历所有视场 ---
+    FOR ^i 1 ^nFields
+
+        ! 获取当前视场(^i)在变焦位置1(Z1)下，主光线(R1)在指定表面(^surf_id)的数据
+        ! 修改点：将 SI 替换为 S^surf_id 以支持任意表面输入 [3]
+        ! L 和 M 是光学方向余弦 (n * l, n * m) [4], [5]
+        ^l_val == (L R1 S^surf_id F^i Z1)   
+        ^m_val == (M R1 S^surf_id F^i Z1)
+        
+        ! 获取指定表面后的折射率，用于归一化方向余弦 [6]
+        ^n_index == (IND S^surf_id Z1)
+
+        ! --- 5. 计算角度 (与 Z 轴夹角) ---
+        ! 公式: sin(theta) = sqrt( (L/n)^2 + (M/n)^2 )
+        ! 注意：IND 返回的折射率可能为负（反射后），平方后不影响计算
+        ^sin_sq == (^l_val**2 + ^m_val**2) / (^n_index**2)
+        ^sin_val == SQRTF(^sin_sq)
+
+        ! 数值保护：防止计算误差导致 asin 参数略微超过 1
+        IF ^sin_val > 1.0
+            ^sin_val == 1.0
+        END IF
+
+        ! 计算角度 (ASINF 返回弧度，转换为度)
+        ^current_angle == ASINF(^sin_val) * ^RAD
+
+        ! --- 6. 更新最大值 ---
+        ! 如果当前角度比记录的最大值还大，则更新最大值
+        IF ^current_angle > ^max_angle
+            ^max_angle == ^current_angle
+        END IF
+
+    END FOR
+
+! --- 7. 返回结果 ---
+END FCT ^max_angle
