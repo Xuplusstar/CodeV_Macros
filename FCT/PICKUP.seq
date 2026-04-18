@@ -1,0 +1,33 @@
+! ---------------------------------------------------
+! 宏名称: SymPickup.seq
+! 功能: 自动为完全对称的镜头结构建立参数拾取 (Pickup)
+! 使用方法: in SymPickup <光阑面编号> <单侧表面数>
+! 例如您的设计: in SymPickup 15 14
+! ---------------------------------------------------
+
+! 检查是否输入了参数，如果没有则使用默认值 (15 和 14)
+RFD 13 12 
+
+LCL NUM ^stop_surf ^half_count ^i ^front ^back ^back_thi
+^stop_surf == #1
+^half_count == #2
+
+OUT N  ! 暂时关闭命令行输出，避免满屏刷屏信息
+
+FOR ^i 1 ^half_count
+   ^front == ^stop_surf - ^i
+   ^back == ^stop_surf + ^i
+   ^back_thi == ^stop_surf - 1 + ^i
+   
+   ! 1. 拾取曲率半径 (乘以 -1 反转符号)
+   PIK RDY S^back S^front -1
+   
+   ! 2. 拾取厚度 (比例为 1)
+   PIK THI S^back_thi S^front 1
+   
+   ! 3. 拾取玻璃材料
+   PIK GLA S^back_thi S^front
+END FOR
+
+OUT Y  ! 恢复命令行输出
+WRI "对称参数拾取已完成！光阑面: S" ^stop_surf

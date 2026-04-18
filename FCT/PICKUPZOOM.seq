@@ -1,0 +1,32 @@
+! ---------------------------------------------------
+! 多组态(Zoom) 对称结构快速拾取宏
+! 自动遍历所有组态，为每个组态建立独立拾取
+! 光阑=S15, 前组=S1..S14
+! ---------------------------------------------------
+LCL NUM ^stop_surf ^half_count ^i ^z ^front ^back ^back_thi ^num_zooms
+
+^stop_surf == 15
+^half_count == 14
+^num_zooms == (NUM Z)  ! 自动获取当前系统的总组态数
+
+OUT N  ! 暂时关闭命令行输出，避免满屏刷屏
+
+FOR ^z 1 ^num_zooms      ! 外层循环：遍历所有组态
+   FOR ^i 1 ^half_count  ! 内层循环：遍历所有对称面
+      ^front == ^stop_surf - ^i
+      ^back == ^stop_surf + ^i
+      ^back_thi == ^stop_surf - 1 + ^i
+      
+      ! 拾取曲率半径 (乘以 -1 反转符号)，明确指定组态 Z^z
+      PIK RDY S^back Z^z S^front Z^z -1
+      
+      ! 拾取厚度 (比例 1)，明确指定组态 Z^z
+      PIK THI S^back_thi Z^z S^front Z^z 1
+      
+      ! 拾取玻璃材料，明确指定组态 Z^z
+      PIK GLA S^back_thi Z^z S^front Z^z
+   END FOR
+END FOR
+
+OUT Y  ! 恢复命令行输出
+WRI "多组态对称参数拾取已完成！光阑面: S" ^stop_surf "，共处理了" ^num_zooms "个组态。"
