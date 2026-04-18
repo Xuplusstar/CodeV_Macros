@@ -9,6 +9,9 @@
   - [启动宏说明](#启动宏说明)
   - [宏函数列表](#宏函数列表)
     - [CENZ](#cenz)
+    - [ETCT](#etct)
+    - [GETSAG](#getsag)
+    - [INFLECT](#inflect)
     - [TRA](#tra)
     - [MAX\_TELE](#max_tele)
     - [TELE](#tele)
@@ -36,6 +39,9 @@
 
 示例：
 - IN CENZ
+- IN ETCT
+- IN GETSAG
+- IN INFLECT
 - IN TRA
 - IN MAX_TELE
 - IN JMRCC
@@ -50,7 +56,7 @@
 - 文件：`Startup.seq`  
 - 作用：在 CodeV 启动时自动运行，配置全局变量和宏路径。  
 - 关键点：  
-  - `pth seq` 设定宏路径，并通过 `IN` 加载宏文件：`CENZ/TRA/MAX_TELE/JMRCC/JMRCC_W/TELE`  
+  - `pth seq` 设定宏路径，并通过 `IN` 加载宏文件：`CENZ/ETCT/GETSAG/INFLECT/TRA/MAX_TELE/JMRCC/JMRCC_W/TELE`  
   - 初始化全局常量 `^PI`、`^RAD` 等。
 
 ## 宏函数列表
@@ -63,6 +69,30 @@
 - 输入：`^i` 起始面号  
 - 输出：`^Z`  
 - 说明：有效半口径 `y = SD - d`（默认 `d=0.2`）；`y<=0` 或 `R=0` 返回 0。
+
+### ETCT
+- 函数：`@ETCT(^s,^z)`  
+- 文件：`FCT\ETCT.seq`  
+- 作用：计算指定表面在指定组态下的边缘厚度与中心厚度比值（`ET/CT`）。  
+- 输入：`^s` 表面编号；`^z` 组态编号。  
+- 输出：`^res`（厚度比值）。  
+- 说明：先读取 `CT S^s Z^z` 与 `ET S^s Z^z`；当 `|CT| < 0.0001` 时使用 `0.0001` 作为分母进行保护，避免除零错误。
+
+### GETSAG
+- 函数：`@GETSAG(^s,^z,^y)`  
+- 文件：`FCT\GETSAG.seq`  
+- 作用：获取指定表面在指定组态与指定 Y 高度处的绝对矢高。  
+- 输入：`^s` 表面编号；`^z` 组态编号；`^y` 为 Y 坐标绝对高度。  
+- 输出：`^sag`（绝对矢高值）。  
+- 说明：通过 `SAGF(^s,^z,0,^y)` 采样并取绝对值；固定坐标采样方式更适合在 `AUT` 中约束，减少优化震荡。
+
+### INFLECT
+- 函数：`@INFLECT(^s,^z,^y)`  
+- 文件：`FCT\INFLECT.seq`  
+- 作用：提取指定表面在指定组态、指定 Y 高度处的子午二阶导数 `d2z/dy2`。  
+- 输入：`^s` 表面编号；`^z` 组态编号；`^y` 为 Y 坐标绝对高度。  
+- 输出：`^d2zdy2`。  
+- 说明：调用 `SDERIVF(^s,^z,0,^y,^deriv_data)` 后读取 `^deriv_data(5)`；若状态非 0（如探针越界）则返回 0 以保证优化流程稳定。
 
 ### TRA
 - 函数：`@TRA(^xf,^yf,^wave_idx)`  
@@ -104,6 +134,9 @@
 
 ## 示例调用
 - `@CENZ(8)` 或 `@CENZ(10)`：定心约束  
+- `@ETCT(5,1)`：第 5 面在第 1 组态下的 ET/CT 约束  
+- `@GETSAG(4,1,3.0)`：第 4 面在 `Y=3.0` 处的绝对矢高约束  
+- `@INFLECT(4,1,2.5)`：第 4 面在 `Y=2.5` 处的曲率符号约束  
 - `@MAX_TELE`：远心度约束  
 - `@TRA(0,0,4)`：透过率约束  
 
