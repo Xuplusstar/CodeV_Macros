@@ -37,15 +37,18 @@ pth seq app "C:\CVUSER\macros\FCT"
 IN CENZ                   ! 加载并编译 @CENZ 函数
 IN TRA                    ! 加载并编译 @TRA 函数
 IN MAX_TELE               ! 加载并编译 @MAX_TELE 函数
-IN JMRCC                  ! 加载并编译 JMRCC 函数
-IN JMRCC_W                ! 加载并编译 JMRCC_W 函数
+IN JMRCC                  ! 加载并编译 @JMRCC 函数
+IN JMRCC_W                ! 加载并编译 @JMRCC_W 函数
 IN TELE                   ! 加载并编译 @TELE 函数
+IN ETCT                   ! 加载并编译 @ETCT 函数
+IN GETSAG                 ! 加载并编译 @GETSAG 函数
+IN INFLECT                ! 加载并编译 @INFLECT 函数
 
 ! 7. 【初始参数设置】
 RDM Y                     ! 默认使用“半径”模式 
 DDM M                     ! 新建镜头默认单位：毫米 
 DIM M                     ! 确保当前环境也设为毫米 
-DIN "TJU"                 ! 设置图形输出的默认签名 
+DIN "TJU-PLUSSTAR"                 ! 设置图形输出的默认签名 
 
 ! 8. 【完成提示】
 OUT Y
@@ -56,7 +59,10 @@ wri "  SVL: successfully enabled"
 wri "  Function loaded: @CENZ ready"
 wri "  Function loaded: @TRA ready"
 wri "  Function loaded: @MAX_TELE ready"
-wri "  Function loaded: JMRCC ready"
-wri "  Function loaded: JMRCC_W ready"
+wri "  Function loaded: @JMRCC ready"
+wri "  Function loaded: @JMRCC_W ready"
 wri "  Function loaded: @TELE ready"
+wri "  Function loaded: @ETCT ready"
+wri "  Function loaded: @GETSAG ready"
+wri "  Function loaded: @INFLECT ready"
 wri "================================================"
